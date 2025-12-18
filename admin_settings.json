@@ -1,0 +1,26 @@
+{
+  "platform_name": "QuickServe",
+  "maintenance_mode": false,
+  "default_search_radius_km": 5,
+  "max_search_radius_km": 25,
+  "provider_auto_online_after_kyc": true,
+  "min_base_price": 999,
+  "platform_fee_percent": 0,
+  "service_types": [
+    "AC Repair",
+    "Electrician",
+    "Plumber",
+    "Cleaner",
+    "Carpenter",
+    "Painter",
+    "Appliance Repair",
+    "Washing Machine Repair"
+  ],
+  "request_statuses": [
+    "pending",
+    "assigned",
+    "in_progress",
+    "completed",
+    "cancelled"
+  ]
+}
