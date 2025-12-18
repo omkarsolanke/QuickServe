@@ -42,12 +42,14 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "https://quickserve-nu.vercel.app",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://192.168.1.2:5173",
         "http://10.153.157.195:5173",
         "https://rising-twice-under-never.trycloudflare.com",
         "https://*.trycloudflare.com",
+        
     ],
     allow_credentials=True,
     allow_methods=["*"],
