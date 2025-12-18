@@ -12,7 +12,7 @@ from fastapi import (
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from backend.database import get_db, ensure_request_location_columns
+from backend.database import get_db
 from backend.deps.customer import customer_required
 from backend.deps.auth import get_current_user
 from backend import models
@@ -55,7 +55,7 @@ def create_request(
     user: dict = Depends(customer_required),
 ):
     # Ensure columns safely
-    ensure_request_location_columns(db)
+    
 
     customer = (
         db.query(models.Customer)
