@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime
 
-from backend.database import get_db
-from backend.deps.auth import get_current_user
-from backend import models
-from backend.schemas import ProviderLocationIn
+from database import get_db
+from deps.auth import get_current_user
+import models
+from schemas import ProviderLocationIn
 
 router = APIRouter(prefix="/providers", tags=["provider-presence"])
 

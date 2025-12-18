@@ -4,11 +4,11 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm import joinedload
 from sqlalchemy import or_
 
-from backend.database import get_db
-from backend import models
-from backend.dependencies.admin_required import admin_required
-from backend.utils.settings_store import load_settings, save_settings
-from backend.schemas import AdminStatsOut, KycRejectIn
+from database import get_db
+import models
+from dependencies.admin_required import admin_required
+from utils.settings_store import load_settings, save_settings
+from schemas import AdminStatsOut, KycRejectIn
 
 
 router = APIRouter(

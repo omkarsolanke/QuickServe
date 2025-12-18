@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from backend.services.location_service import reverse_geocode
+from services.location_service import reverse_geocode
 
 router = APIRouter(prefix="/location", tags=["location"])
 

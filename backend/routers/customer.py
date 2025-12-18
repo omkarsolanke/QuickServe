@@ -3,10 +3,10 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 from typing import Optional
 
-from backend.database import get_db
-from backend.deps.customer import customer_required
-from backend import models
-from backend.auth_utils import verify_password, get_password_hash
+from database import get_db
+from deps.customer import customer_required
+import models
+from auth_utils import verify_password, get_password_hash
 
 router = APIRouter(prefix="/customer", tags=["customer"])
 

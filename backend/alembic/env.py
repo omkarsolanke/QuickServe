@@ -7,8 +7,8 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
-from backend.database import Base
-import backend.models as models
+from database import Base
+import models as models
  # IMPORTANT: ensures models are imported
 
 config = context.config

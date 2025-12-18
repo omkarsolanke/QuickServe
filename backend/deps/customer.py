@@ -1,5 +1,5 @@
 from fastapi import Depends, HTTPException
-from backend.deps.auth import get_current_user
+from deps.auth import get_current_user
 
 
 def customer_required(user: dict = Depends(get_current_user)) -> dict:

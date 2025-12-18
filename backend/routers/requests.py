@@ -12,13 +12,13 @@ from fastapi import (
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from backend.database import get_db
-from backend.deps.customer import customer_required
-from backend.deps.auth import get_current_user
-from backend import models
-from backend.services.location_service import reverse_geocode
-from backend.services.cloudinary_service import upload_temp_image
-from backend.services.groq_vision import analyze_service_image
+from database import get_db
+from deps.customer import customer_required
+from deps.auth import get_current_user
+import models
+from services.location_service import reverse_geocode
+from services.cloudinary_service import upload_temp_image
+from services.groq_vision import analyze_service_image
 import logging
 
 # =====================================================

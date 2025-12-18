@@ -11,10 +11,10 @@ from fastapi import (
 )
 from sqlalchemy.orm import Session
 
-from backend.database import get_db
-from backend import models, schemas
-from backend.deps.auth import get_current_user
-from backend.utils import cloudinary_config  # ensures config loads
+from database import get_db
+import models, schemas
+from deps.auth import get_current_user
+from utils import cloudinary_config  # ensures config loads
 import cloudinary.uploader
 
 router = APIRouter(prefix="/provider/kyc", tags=["provider-kyc"])

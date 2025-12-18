@@ -2,11 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
-from backend.database import get_db
-from backend.deps.auth import get_current_user
-from backend.deps.customer import customer_required
-from backend import models
-from backend.schemas.provider import ProviderMeOut, ProviderMeUpdateIn, AvailabilityIn
+from database import get_db
+from deps.auth import get_current_user
+from deps.customer import customer_required
+import models
+from schemas.provider import ProviderMeOut, ProviderMeUpdateIn, AvailabilityIn
 
 # -------------------------------------------------
 # PROVIDER ROUTER

@@ -1,5 +1,3 @@
-# backend/main.py
-
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -8,22 +6,23 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-import backend.utils.cloudinary_config
 
-# Routers
-from backend.routers.auth import router as auth_router
-from backend.routers.users import router as users_router
-from backend.routers.requests import requests_router, ai_router
-from backend.routers.admin import router as admin_router
-from backend.routers.customer import router as customer_router
-from backend.routers.provider import (
+from utils import cloudinary_config
+
+# ✅ FIXED ROUTER IMPORTS
+from routers.auth import router as auth_router
+from routers.users import router as users_router
+from routers.requests import requests_router, ai_router
+from routers.admin import router as admin_router
+from routers.customer import router as customer_router
+from routers.provider import (
     provider_router,
     public_provider_router,
 )
-from backend.routers.provider_location import router as provider_location_router
-from backend.routers.provider_kyc import router as provider_kyc_router
-from backend.routers.provider_presence import router as provider_presence_router
-from backend.routers.location import router as location_router
+from routers.provider_location import router as provider_location_router
+from routers.provider_kyc import router as provider_kyc_router
+from routers.provider_presence import router as provider_presence_router
+from routers.location import router as location_router
 
 app = FastAPI(title="QuickServe API")
 

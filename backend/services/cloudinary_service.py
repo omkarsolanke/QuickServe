@@ -1,6 +1,6 @@
 import cloudinary.uploader
 import logging
-from backend.utils import cloudinary_config  # noqa
+from utils import cloudinary_config  # noqa
 
 logger = logging.getLogger("quickserve.cloudinary")
 
