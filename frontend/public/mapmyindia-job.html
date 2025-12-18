@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Job Map</title>
+    <style>
+      html,
+      body,
+      #map {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+
+    <!-- MapmyIndia Web SDK -->
+    <script src="https://apis.mapmyindia.com/advancedmaps/v1/5e498e149c8074edc81c1efeb8a26a56/map_load?v=1.5"></script>
+  </head>
+  <body>
+    <div id="map"></div>
+
+    <script>
+      window.initJobMap = function (config) {
+        // SDK + Map must exist
+        if (!window.MapmyIndia || !MapmyIndia.Map) return;
+
+        var centerLat = config.customerLat || config.providerLat || 20.5937;
+        var centerLng = config.customerLng || config.providerLng || 78.9629;
+
+        var map = new MapmyIndia.Map("map", {
+          center: [centerLat, centerLng],
+          zoom: 13,
+          search: false,
+          location: false,
+          fullscreenControl: false,
+          zoomControl: true,
+        });
+
+        // Use Leaflet layer APIs (L.marker / L.latLngBounds)
+        if (config.customerLat && config.customerLng && window.L) {
+          L.marker([config.customerLat, config.customerLng])
+            .addTo(map)
+            .bindPopup("Customer");
+        }
+
+        if (config.providerLat && config.providerLng && window.L) {
+          L.marker([config.providerLat, config.providerLng])
+            .addTo(map)
+            .bindPopup("You");
+        }
+
+        if (
+          config.customerLat &&
+          config.customerLng &&
+          config.providerLat &&
+          config.providerLng &&
+          window.L
+        ) {
+          var bounds = L.latLngBounds(
+            [config.customerLat, config.customerLng],
+            [config.providerLat, config.providerLng]
+          );
+          map.fitBounds(bounds, { padding: [40, 40] });
+        }
+      };
+    </script>
+  </body>
+</html>

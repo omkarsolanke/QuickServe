@@ -1,0 +1,72 @@
+.loading-root {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top left, #1f2937, #020617 55%);
+  color: #e5e7eb;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+}
+
+.loading-card {
+  background: rgba(15, 23, 42, 0.95);
+  border-radius: 24px;
+  padding: 40px 56px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
+  text-align: center;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.logo-glow {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 24px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 30% 0, #4f46e5, #22c55e 70%);
+  color: white;
+  font-weight: 700;
+  font-size: 22px;
+  box-shadow: 0 0 40px rgba(129, 140, 248, 0.6);
+}
+
+.loader-orbit {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 24px;
+  border-radius: 999px;
+  border: 1px dashed rgba(148, 163, 184, 0.6);
+  animation: spin 2.4s linear infinite;
+}
+
+.loader-orbit .dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #38bdf8;
+  border-radius: 999px;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.9);
+}
+
+.loader-orbit .dot:nth-child(1) { top: -4px; left: 50%; transform: translateX(-50%); }
+loader-orbit .dot:nth-child(2) { bottom: -4px; left: 12px; }
+.loader-orbit .dot:nth-child(3) { bottom: -4px; right: 12px; }
+
+.loading-title {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.loading-subtitle {
+  margin-top: 4px;
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
