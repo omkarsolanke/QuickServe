@@ -3,15 +3,12 @@
 from dotenv import load_dotenv
 load_dotenv()
 
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-import os
-import backend.utils.cloudinary_config  # note backend.
-
-from backend.database import engine
-from backend import models
+import backend.utils.cloudinary_config
 
 # Routers
 from backend.routers.auth import router as auth_router
@@ -30,25 +27,32 @@ from backend.routers.location import router as location_router
 
 app = FastAPI(title="QuickServe API")
 
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+# -------------------------
+# Static uploads (cloud safe)
+# -------------------------
+UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
+# -------------------------
+# CORS
+# -------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://quickserve-nu.vercel.app",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "http://192.168.1.2:5173",
-        "http://10.153.157.195:5173",
-        "https://rising-twice-under-never.trycloudflare.com",
-        "https://*.trycloudflare.com",
-        
     ],
+    allow_origin_regex=r"https://.*\.trycloudflare\.com",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# -------------------------
+# Routers
+# -------------------------
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(requests_router)
@@ -61,6 +65,13 @@ app.include_router(provider_kyc_router)
 app.include_router(provider_presence_router)
 app.include_router(public_provider_router)
 app.include_router(location_router)
+
+# -------------------------
+# Health & root
+# -------------------------
+@app.get("/")
+def root():
+    return {"message": "QuickServe API is running"}
 
 @app.get("/health")
 def health():
