@@ -19,7 +19,7 @@ function Badge({ status }) {
     </span>
   );
 }
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 function ConfirmModal({
   open,
   title,
@@ -149,31 +149,36 @@ export default function AdminKycReview() {
   };
 
   /* ---------- docs ---------- */
-  const DocCard = ({ title, path }) => (
-    <div className="rounded-3xl bg-slate-950/60 border border-slate-800 p-5 shadow-xl">
-      <p className="text-sm font-semibold text-slate-100">{title}</p>
-      <p className="text-[11px] text-slate-500 mt-1 break-all">
-        {path || "Not uploaded"}
-      </p>
+  const DocCard = ({ title, path }) => {
+    const hasDoc = Boolean(path);
+    const url = path; // backend already stores full Cloudinary URL
 
-      <div className="mt-4 flex gap-2">
-        <button
-          disabled={!path}
-          onClick={() => window.open(`${API_BASE}/${path}`, "_blank")}
-          className="px-3 py-2 rounded-xl bg-slate-900/60 border border-slate-800 text-xs text-slate-200 disabled:opacity-50"
-        >
-          Open
-        </button>
-        <button
-          disabled={!path}
-          onClick={() => path && navigator.clipboard.writeText(`${API_BASE}/${path}`)}
-          className="px-3 py-2 rounded-xl border border-slate-700 text-xs text-slate-200 disabled:opacity-50"
-        >
-          Copy path
-        </button>
+    return (
+      <div className="rounded-3xl bg-slate-950/60 border border-slate-800 p-5 shadow-xl">
+        <p className="text-sm font-semibold text-slate-100">{title}</p>
+        <p className="text-[11px] text-slate-500 mt-1 break-all">
+          {hasDoc ? url : "Not uploaded"}
+        </p>
+
+        <div className="mt-4 flex gap-2">
+          <button
+            disabled={!hasDoc}
+            onClick={() => hasDoc && window.open(url, "_blank")}
+            className="px-3 py-2 rounded-xl bg-slate-900/60 border border-slate-800 text-xs text-slate-200 disabled:opacity-50"
+          >
+            Open
+          </button>
+          <button
+            disabled={!hasDoc}
+            onClick={() => hasDoc && navigator.clipboard.writeText(url)}
+            className="px-3 py-2 rounded-xl border border-slate-700 text-xs text-slate-200 disabled:opacity-50"
+          >
+            Copy link
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   if (loading) {
     return (
