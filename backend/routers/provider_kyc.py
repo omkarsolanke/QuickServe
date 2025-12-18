@@ -1,5 +1,4 @@
 import os
-import uuid
 from typing import Optional
 
 from fastapi import (
@@ -14,34 +13,61 @@ from sqlalchemy.orm import Session
 
 from backend.database import get_db
 from backend import models, schemas
-from backend.deps.auth import get_current_user   # ✅ FIXED IMPORT
+from backend.deps.auth import get_current_user
+from backend.utils import cloudinary_config  # ensures config loads
+import cloudinary.uploader
 
 router = APIRouter(prefix="/provider/kyc", tags=["provider-kyc"])
 
-UPLOAD_DIR = "uploads/kyc"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
 ALLOWED_EXTS = {".jpg", ".jpeg", ".png", ".pdf"}
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 
 
 # =====================================================
 # HELPERS
 # =====================================================
-def save_upload(file: UploadFile) -> str:
+
+def _validate_ext(file: UploadFile) -> str:
     ext = os.path.splitext((file.filename or "").lower())[1]
     if ext not in ALLOWED_EXTS:
         raise HTTPException(
             status_code=400,
             detail=f"Unsupported file type: {ext}",
         )
+    return ext
 
-    filename = f"{uuid.uuid4().hex}{ext}"
-    path = os.path.join(UPLOAD_DIR, filename)
 
-    with open(path, "wb") as f:
-        f.write(file.file.read())
+async def _upload_to_cloudinary(file: UploadFile, folder: str) -> str:
+    """
+    Uploads an UploadFile to Cloudinary and returns secure_url.
+    """
+    ext = _validate_ext(file)
+    bytes_data = await file.read()
 
-    return path
+    if not bytes_data:
+        raise HTTPException(status_code=400, detail="Empty file upload")
+
+    if len(bytes_data) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="File too large (max 5MB)")
+
+    resource_type = "image" if ext != ".pdf" else "raw"
+
+    result = cloudinary.uploader.upload(
+        bytes_data,
+        folder=folder,
+        resource_type=resource_type,
+        use_filename=True,
+        unique_filename=True,
+    )
+
+    url = result.get("secure_url")
+    if not url:
+        raise HTTPException(
+            status_code=500,
+            detail="Cloudinary upload failed",
+        )
+
+    return url
 
 
 def get_provider(db: Session, user_id: int) -> models.Provider:
@@ -61,29 +87,26 @@ def get_provider(db: Session, user_id: int) -> models.Provider:
 # =====================================================
 # GET /provider/kyc/status
 # =====================================================
+
 @router.get("/status", response_model=schemas.ProviderKycStatusOut)
 def kyc_status(
     db: Session = Depends(get_db),
     token=Depends(get_current_user),
 ):
     if token.get("role") != "provider":
-        raise HTTPException(
-            status_code=403,
-            detail="Only providers allowed",
-        )
+        raise HTTPException(status_code=403, detail="Only providers allowed")
 
     provider = get_provider(db, int(token["user_id"]))
 
-    return {
-        "status": provider.kyc_status or "not_submitted"
-    }
+    return {"status": provider.kyc_status or "not_submitted"}
 
 
 # =====================================================
 # POST /provider/kyc/upload
 # =====================================================
+
 @router.post("/upload")
-def upload_kyc(
+async def upload_kyc(
     id_number: str = Form(...),
     address_line: str = Form(""),
     id_proof: UploadFile = File(...),
@@ -93,18 +116,24 @@ def upload_kyc(
     token=Depends(get_current_user),
 ):
     if token.get("role") != "provider":
-        raise HTTPException(
-            status_code=403,
-            detail="Only providers allowed",
-        )
+        raise HTTPException(status_code=403, detail="Only providers allowed")
 
     provider = get_provider(db, int(token["user_id"]))
 
-    id_proof_path = save_upload(id_proof)
-    address_proof_path = save_upload(address_proof)
-    profile_photo_path = (
-        save_upload(profile_photo) if profile_photo else None
+    base_folder = f"quickserve/kyc/provider_{provider.id}"
+
+    id_proof_url = await _upload_to_cloudinary(
+        id_proof, f"{base_folder}/id_proof"
     )
+    address_proof_url = await _upload_to_cloudinary(
+        address_proof, f"{base_folder}/address_proof"
+    )
+
+    profile_photo_url: Optional[str] = None
+    if profile_photo:
+        profile_photo_url = await _upload_to_cloudinary(
+            profile_photo, f"{base_folder}/profile_photo"
+        )
 
     existing = (
         db.query(models.ProviderKYC)
@@ -115,18 +144,18 @@ def upload_kyc(
     if existing:
         existing.id_number = id_number
         existing.address_line = address_line
-        existing.id_proof_path = id_proof_path
-        existing.address_proof_path = address_proof_path
-        existing.profile_photo_path = profile_photo_path
+        existing.id_proof_path = id_proof_url
+        existing.address_proof_path = address_proof_url
+        existing.profile_photo_path = profile_photo_url
     else:
         db.add(
             models.ProviderKYC(
                 provider_id=provider.id,
                 id_number=id_number,
                 address_line=address_line,
-                id_proof_path=id_proof_path,
-                address_proof_path=address_proof_path,
-                profile_photo_path=profile_photo_path,
+                id_proof_path=id_proof_url,
+                address_proof_path=address_proof_url,
+                profile_photo_path=profile_photo_url,
             )
         )
 
