@@ -1,11 +1,45 @@
-fastapi
-uvicorn
-python-multipart
-sqlalchemy
-pydantic
-python-jose
-passlib[bcrypt]
-requests
-python-dotenv
-cloudinary
-groq
+# =========================
+# Core Framework
+# =========================
+fastapi==0.125.0
+uvicorn==0.38.0
+
+# =========================
+# Database (PostgreSQL)
+# =========================
+sqlalchemy==2.0.45
+psycopg2-binary==2.9.9
+
+# =========================
+# Auth & Security
+# =========================
+python-jose==3.5.0
+passlib[bcrypt]==1.7.4
+
+# =========================
+# Data Validation
+# =========================
+pydantic==2.12.5
+typing-extensions==4.15.0
+
+# =========================
+# File Uploads & Forms
+# =========================
+python-multipart==0.0.21
+
+# =========================
+# Environment Variables
+# =========================
+python-dotenv==1.2.1
+
+# =========================
+# External APIs
+# =========================
+requests==2.32.5
+cloudinary==1.44.1
+groq==1.0.0
+
+# =========================
+# FastAPI Internals (Pin for Stability)
+# =========================
+starlette==0.50.0
