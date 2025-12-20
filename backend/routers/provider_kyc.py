@@ -1,7 +1,10 @@
 # backend/routers/provider_kyc.py
+import re
+from pathlib import Path
+from typing import Optional
+
 from fastapi import APIRouter, Depends, File, Form, UploadFile, HTTPException
 from sqlalchemy.orm import Session
-from typing import Optional
 
 from database import get_db
 import models, schemas
@@ -22,14 +25,31 @@ def get_provider(db: Session, user_id: int) -> models.Provider:
     return provider
 
 
+def _safe_key(path: str) -> str:
+    """
+    Supabase Storage keys must not contain spaces or weird unicode.
+    Normalize by replacing whitespace with '-' and stripping invalid chars.
+    """
+    # collapse all whitespace (including non‑breaking) to "-"
+    key = re.sub(r"\s+", "-", path)
+    # allow only safe characters for keys
+    key = re.sub(r"[^A-Za-z0-9\-._/]", "", key)
+    return key
+
+
 def upload_file_to_supabase(file: UploadFile, folder: str) -> str:
-    ext = (file.filename or "").split(".")[-1].lower()
-    filename = f"{folder}/{file.filename}"
+    # Normalize original filename
+    original_name = Path(file.filename or "file").name
+    raw_key = f"{folder}/{original_name}"
+    filename = _safe_key(raw_key)
+
     content = file.file.read()
+    file.file.seek(0)
+
     supabase.storage.from_("kyc").upload(
         filename,
         content,
-        {"content-type": file.content_type},
+        {"content-type": file.content_type or "application/octet-stream"},
     )
     return supabase.storage.from_("kyc").get_public_url(filename)
 
@@ -63,6 +83,7 @@ async def upload_kyc(
 
     base_folder = f"quickserve/kyc/provider_{provider.id}"
 
+    # Required ID proof
     id_proof_url = upload_file_to_supabase(id_proof, f"{base_folder}/id_proof")
 
     address_proof_url = None
