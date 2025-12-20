@@ -1,5 +1,7 @@
-import base64
-from typing import Optional
+# backend/routers/requests.py
+
+import logging
+from typing import Optional, List
 
 from fastapi import (
     APIRouter,
@@ -19,7 +21,6 @@ import models
 from services.location_service import reverse_geocode
 from services.cloudinary_service import upload_temp_image
 from services.groq_vision import analyze_service_image
-import logging
 
 # =====================================================
 # SCHEMAS
@@ -54,9 +55,6 @@ def create_request(
     db: Session = Depends(get_db),
     user: dict = Depends(customer_required),
 ):
-    # Ensure columns safely
-    
-
     customer = (
         db.query(models.Customer)
         .filter(models.Customer.user_id == user["user_id"])
@@ -67,7 +65,12 @@ def create_request(
 
     address = payload.address
 
-    if payload.customer_lat is not None and payload.customer_lng is not None and not address:
+    # If we have lat/lng but no address, try reverse geocoding
+    if (
+        payload.customer_lat is not None
+        and payload.customer_lng is not None
+        and not address
+    ):
         geo = reverse_geocode(payload.customer_lat, payload.customer_lng)
         if geo:
             address = geo.get("formatted")
@@ -267,7 +270,7 @@ def get_request(
         .first()
     )
     if not customer:
-        raise HTTPException(statuscode=400, detail="Customer profile not found")
+        raise HTTPException(status_code=400, detail="Customer profile not found")
 
     r = (
         db.query(models.Request)

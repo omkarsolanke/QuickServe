@@ -1,3 +1,4 @@
+from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import text
@@ -26,13 +27,13 @@ def provider_required(user=Depends(get_current_user)):
 # =====================================================
 # UTILS
 # =====================================================
-def csv_to_list(s):
+def csv_to_list(s: Optional[str]):
     if not s:
         return []
     return [x.strip() for x in s.split(",") if x.strip()]
 
 
-def list_to_csv(arr):
+def list_to_csv(arr: Optional[List[str]]):
     if not arr:
         return ""
     return ",".join(arr)
@@ -40,8 +41,8 @@ def list_to_csv(arr):
 
 def ensure_columns(db: Session):
     """
-    Safe column creation for SQLite (DEV only).
-    Prevents crashes if columns are missing.
+    Safe column creation for Postgres (Render/local Postgres).
+    Adds extra columns to providers/users if they are missing.
     """
     provider_cols = {
         "bio": "TEXT",
@@ -52,28 +53,38 @@ def ensure_columns(db: Session):
         "start_time": "TEXT",
         "end_time": "TEXT",
         # live location stored on Provider
-        "last_latitude": "REAL",
-        "last_longitude": "REAL",
+        "last_latitude": "DOUBLE PRECISION",
+        "last_longitude": "DOUBLE PRECISION",
     }
 
     user_cols = {
         "phone": "TEXT",
     }
 
-    def existing_cols(table):
-        rows = db.execute(text(f"PRAGMA table_info({table})")).fetchall()
-        return {r[1] for r in rows}
+    def existing_cols(table: str) -> set[str]:
+        rows = db.execute(
+            text(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                  AND table_name = :table
+                """
+            ),
+            {"table": table},
+        ).fetchall()
+        return {r[0] for r in rows}
 
     provider_existing = existing_cols("providers")
     user_existing = existing_cols("users")
 
     for col, typ in provider_cols.items():
         if col not in provider_existing:
-            db.execute(text(f"ALTER TABLE providers ADD COLUMN {col} {typ}"))
+            db.execute(text(f'ALTER TABLE providers ADD COLUMN "{col}" {typ}'))
 
     for col, typ in user_cols.items():
         if col not in user_existing:
-            db.execute(text(f"ALTER TABLE users ADD COLUMN {col} {typ}"))
+            db.execute(text(f'ALTER TABLE users ADD COLUMN "{col}" {typ}'))
 
     db.commit()
 
@@ -187,7 +198,7 @@ def update_availability(
 
 
 # =====================================================
-# POST /provider/providers/location  (frontend calls /providers/location)
+# POST /provider/providers/location
 # =====================================================
 @provider_router.post("/providers/location")
 def update_location(
@@ -245,12 +256,13 @@ def provider_location_me(
     }
 
 
-
 # =====================================================
 # GET /provider/incoming
 # =====================================================
 @provider_router.get("/incoming")
-def incoming_requests(db: Session = Depends(get_db), user: dict = Depends(get_current_user)):
+def incoming_requests(
+    db: Session = Depends(get_db), user: dict = Depends(get_current_user)
+):
     if user.get("role") != "provider":
         raise HTTPException(status_code=403, detail="Provider access required")
 
@@ -524,7 +536,6 @@ def provider_update_status(
     return {"id": r.id, "status": r.status}
 
 
-
 # -------------------------------------------------
 # CUSTOMER ROUTER: /customer/nearby-providers
 # -------------------------------------------------
@@ -588,13 +599,10 @@ def nearby_providers(
     return {"items": items}
 
 
-
-
 # =====================================================
 # PUBLIC PROVIDER PROFILE (for customers)
 # GET /providers/{provider_id}
 # =====================================================
-
 public_provider_router = APIRouter(prefix="/providers", tags=["providers-public"])
 
 
@@ -631,3 +639,5 @@ def get_provider_public_profile(
         "jobs_completed": getattr(provider, "jobs_completed", 0),
         "is_online": bool(provider.is_online),
     }
+
+

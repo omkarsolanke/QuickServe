@@ -1,18 +1,4 @@
-# ENV
 .env
-backend/.env
-
-# Python
 __pycache__/
-*.pyc
-
-# Node
 node_modules/
-frontend/node_modules/
-backend/node_modules/
-
-# Database
-*.db
-
-# OS
-.DS_Store
+uploads/

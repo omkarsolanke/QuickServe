@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status ,Query
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -104,3 +104,39 @@ def update_customer_me(
             "id": customer.id,
         },
     }
+
+
+
+@router.get("/nearby-providers")
+def nearby_providers(
+    service_type: str = Query(..., description="Service type, e.g. 'AC Repair'"),
+    db: Session = Depends(get_db),
+    user: dict = Depends(customer_required),
+):
+    """
+    Returns providers for the given service_type.
+    (You can extend this later with distance filtering using customer_lat/lng.)
+    """
+    providers = (
+        db.query(models.Provider, models.User)
+        .join(models.User, models.User.id == models.Provider.user_id)
+        .filter(models.Provider.service_type == service_type)
+        .filter(models.Provider.kyc_status == "approved")
+        .all()
+    )
+
+    items = []
+    for p, u in providers:
+        items.append(
+            {
+                "provider_id": p.id,
+                "full_name": u.full_name,
+                "email": u.email,
+                "service_type": p.service_type,
+                "base_price": p.base_price,
+                "kyc_status": p.kyc_status,
+                "is_online": bool(p.is_online),
+            }
+        )
+
+    return {"items": items}

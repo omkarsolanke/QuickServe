@@ -82,7 +82,7 @@ export default function ProviderKycUpload() {
   const validate = () => {
     if (!form.id_number.trim()) return "ID number is required.";
     if (!files.id_proof) return "Please upload ID proof.";
-    if (!files.address_proof) return "Please upload address proof.";
+    // address_proof is optional server-side; do not require here
     return "";
   };
 
@@ -101,18 +101,26 @@ export default function ProviderKycUpload() {
       const fd = new FormData();
       fd.append("id_number", form.id_number);
       fd.append("address_line", form.address_line || "");
-
       fd.append("id_proof", files.id_proof);
-      fd.append("address_proof", files.address_proof);
+      if (files.address_proof) fd.append("address_proof", files.address_proof);
       if (files.profile_photo) fd.append("profile_photo", files.profile_photo);
 
-      // Let Axios set multipart boundaries automatically
       await api.post("/provider/kyc/upload", fd);
 
       setStatus("pending");
       navigate("/provider/kyc-pending");
     } catch (err) {
-      setError(err.response?.data?.detail || "KYC upload failed");
+      const detail = err?.response?.data?.detail;
+      let message = "KYC upload failed";
+
+      if (Array.isArray(detail) && detail.length) {
+        // FastAPI 422: list of {loc,msg,type}
+        message = detail.map((d) => d.msg).join(", ");
+      } else if (typeof detail === "string") {
+        message = detail;
+      }
+
+      setError(message);
     } finally {
       setSubmitting(false);
     }
@@ -368,7 +376,7 @@ export default function ProviderKycUpload() {
                     title="Address proof"
                     subtitle="Bill / rent agreement"
                     name="address_proof"
-                    required
+                    required={false} // optional in backend
                     accept="image/*,application/pdf"
                   />
                   <FileCard

@@ -6,7 +6,7 @@ import { jwtDecode } from "jwt-decode";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: "admin@quickserve.com", password: "admin@123" });
+  const [form, setForm] = useState({ email: "admin@quickserve.com", password: "admin123" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);

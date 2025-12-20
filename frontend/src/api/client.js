@@ -1,3 +1,4 @@
+// src/api/client.js
 import axios from "axios";
 
 const host = window.location.hostname;
@@ -26,9 +27,7 @@ else {
 
 const api = axios.create({
   baseURL,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  // Do NOT force JSON here; set per-request / in interceptor
 });
 
 api.interceptors.request.use((config) => {
@@ -36,6 +35,20 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // Only set JSON when body is NOT FormData
+  if (config.data instanceof FormData) {
+    // Let browser set correct multipart/form-data boundary
+    if (config.headers && config.headers["Content-Type"]) {
+      delete config.headers["Content-Type"];
+    }
+  } else {
+    config.headers = {
+      ...(config.headers || {}),
+      "Content-Type": "application/json",
+    };
+  }
+
   return config;
 });
 

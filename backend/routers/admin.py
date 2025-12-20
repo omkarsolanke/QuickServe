@@ -1,7 +1,7 @@
 from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
 
 from database import get_db
@@ -9,7 +9,6 @@ import models
 from dependencies.admin_required import admin_required
 from utils.settings_store import load_settings, save_settings
 from schemas import AdminStatsOut, KycRejectIn
-
 
 router = APIRouter(
     prefix="/admin",
@@ -20,6 +19,7 @@ router = APIRouter(
 # ======================================================
 # DASHBOARD STATS
 # ======================================================
+
 @router.get("/stats", response_model=AdminStatsOut)
 def admin_stats(db: Session = Depends(get_db)):
     return {
@@ -40,6 +40,7 @@ def admin_stats(db: Session = Depends(get_db)):
 # ======================================================
 # KYC QUEUE
 # ======================================================
+
 @router.get("/kyc")
 def kyc_queue(
     status: str = Query("pending"),
@@ -81,10 +82,14 @@ def kyc_queue(
     }
 
 # ======================================================
-# KYC DETAIL  (matches AdminKycReview.jsx)
+# KYC DETAIL (provider-based, matches existing frontend)
 # ======================================================
 @router.get("/kyc/{provider_id}")
-def kyc_detail(provider_id: int, db: Session = Depends(get_db)):
+def kyc_detail(
+    provider_id: int,
+    db: Session = Depends(get_db),
+    user: dict = Depends(admin_required),
+):
     # Provider + user
     row = (
         db.query(models.Provider, models.User)
@@ -95,44 +100,22 @@ def kyc_detail(provider_id: int, db: Session = Depends(get_db)):
     if not row:
         raise HTTPException(status_code=404, detail="Provider not found")
 
-    provider, user = row
+    provider, u = row
 
-    # Optional: separate ProviderKYC table; adjust name/fields to your model
+    # KYC row
     kyc = (
         db.query(models.ProviderKYC)
         .filter(models.ProviderKYC.provider_id == provider_id)
         .first()
     )
-
     if not kyc:
-        # still return basic structure so frontend doesn't crash
-        return {
-            "user": {
-                "id": user.id,
-                "full_name": user.full_name,
-                "email": user.email,
-            },
-            "provider": {
-                "id": provider.id,
-                "user_id": provider.user_id,
-                "service_type": provider.service_type,
-                "base_price": provider.base_price,
-                "kyc_status": provider.kyc_status,
-                "is_online": bool(provider.is_online),
-            },
-            "kyc": {
-                "id_proof_path": None,
-                "address_proof_path": None,
-                "profile_photo_path": None,
-                "rejection_reason": None,
-            },
-        }
+        raise HTTPException(status_code=404, detail="KYC record not found")
 
     return {
         "user": {
-            "id": user.id,
-            "full_name": user.full_name,
-            "email": user.email,
+            "id": u.id,
+            "full_name": u.full_name,
+            "email": u.email,
         },
         "provider": {
             "id": provider.id,
@@ -144,16 +127,20 @@ def kyc_detail(provider_id: int, db: Session = Depends(get_db)):
         },
         "kyc": {
             "id": kyc.id,
-            "id_proof_path": kyc.id_proof_path,
-            "address_proof_path": kyc.address_proof_path,
-            "profile_photo_path": kyc.profile_photo_path,
+            # ✅ correct attribute names as in models.ProviderKYC
+            "id_proof_path": kyc.id_proof_url,
+            "address_proof_path": kyc.address_proof_url,
+            "profile_photo_path": kyc.profile_photo_url,
             "rejection_reason": getattr(kyc, "rejection_reason", None),
         },
     }
 
+
+
 # ======================================================
 # KYC APPROVE / REJECT
 # ======================================================
+
 @router.post("/kyc/{provider_id}/approve")
 def kyc_approve(provider_id: int, db: Session = Depends(get_db)):
     provider = (
@@ -165,7 +152,7 @@ def kyc_approve(provider_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Provider not found")
 
     provider.kyc_status = "approved"
-    # if you track rejection_reason on KYC, clear it
+
     kyc = (
         db.query(models.ProviderKYC)
         .filter(models.ProviderKYC.provider_id == provider_id)
@@ -204,6 +191,12 @@ def kyc_reject(
 
     db.commit()
     return {"message": "KYC rejected", "kyc_status": provider.kyc_status}
+
+# ======================================================
+# (rest of admin endpoints: providers, customers, requests, reports, settings)
+# ======================================================
+# ... keep your existing implementations for providers/customers/requests/reports/settings unchanged.
+
 
 # ======================================================
 # PROVIDERS

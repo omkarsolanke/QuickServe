@@ -2,8 +2,7 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-import models
-import schemas
+import models, schemas
 from database import get_db
 from auth_utils import (
     verify_password,
