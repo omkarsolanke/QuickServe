@@ -1,6 +1,6 @@
 // src/pages/customer/CustomerDashboard.jsx
 import { useEffect, useMemo, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import api from "../../api/client";
 
 function cx(...c) {
@@ -17,6 +17,7 @@ function Pill({ children }) {
 
 function StatusBadge({ status }) {
   const s = String(status || "").toLowerCase();
+
   if (s === "completed") {
     return (
       <span className="text-[11px] px-3 py-1 rounded-full border border-emerald-500/50 bg-emerald-500/15 text-emerald-300">
@@ -24,6 +25,7 @@ function StatusBadge({ status }) {
       </span>
     );
   }
+
   if (s === "cancelled") {
     return (
       <span className="text-[11px] px-3 py-1 rounded-full border border-red-500/50 bg-red-500/15 text-red-300">
@@ -31,6 +33,7 @@ function StatusBadge({ status }) {
       </span>
     );
   }
+
   if (s === "assigned") {
     return (
       <span className="text-[11px] px-3 py-1 rounded-full border border-sky-500/50 bg-sky-500/15 text-sky-300">
@@ -38,6 +41,32 @@ function StatusBadge({ status }) {
       </span>
     );
   }
+
+  if (s === "en_route") {
+    return (
+      <span className="text-[11px] px-3 py-1 rounded-full border border-indigo-500/50 bg-indigo-500/15 text-indigo-300">
+        TO LOCATION
+      </span>
+    );
+  }
+
+  if (s === "arrived") {
+    return (
+      <span className="text-[11px] px-3 py-1 rounded-full border border-amber-400/60 bg-amber-400/15 text-amber-200">
+        ARRIVED
+      </span>
+    );
+  }
+
+  if (s === "payment") {
+    return (
+      <span className="text-[11px] px-3 py-1 rounded-full border border-emerald-400/60 bg-emerald-400/15 text-emerald-200">
+        PAYMENT
+      </span>
+    );
+  }
+
+  // default = pending
   return (
     <span className="text-[11px] px-3 py-1 rounded-full border border-amber-500/50 bg-amber-500/15 text-amber-200">
       PENDING
@@ -47,6 +76,7 @@ function StatusBadge({ status }) {
 
 export default function CustomerDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [userName, setUserName] = useState("Customer");
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -78,11 +108,22 @@ export default function CustomerDashboard() {
   };
 
   useEffect(() => {
+    // initial load
     loadData();
+    // background polling every 10 seconds
     const id = setInterval(loadData, 10000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // when coming back from a request page that may have changed status,
+  // allow that page to trigger a one-time refresh via router state
+  useEffect(() => {
+    if (location.state && location.state.refreshRequests) {
+      loadData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
 
   const handleLogout = () => {
     localStorage.removeItem("access_token");
@@ -91,7 +132,9 @@ export default function CustomerDashboard() {
   };
 
   const handleOpenRequest = (req) => {
-    navigate(`/customer/requests/${req.id}`, { state: { request: req } });
+    navigate(`/customer/requests/${req.id}`, {
+      state: { request: req, fromDashboard: true },
+    });
   };
 
   const initials = useMemo(() => {
@@ -103,9 +146,12 @@ export default function CustomerDashboard() {
       .join("");
   }, [userName]);
 
-  const activeCount = requests.filter(
-    (r) => String(r.status).toLowerCase() === "pending"
-  ).length;
+  // treat anything that is not completed/cancelled as active (pending, assigned, en_route, arrived, payment)
+  const activeCount = requests.filter((r) => {
+    const s = String(r.status || "").toLowerCase();
+    return s !== "completed" && s !== "cancelled";
+  }).length;
+
   const completedCount = requests.filter(
     (r) => String(r.status).toLowerCase() === "completed"
   ).length;
@@ -127,7 +173,7 @@ export default function CustomerDashboard() {
         <div className="absolute inset-0 opacity-[0.04] bg-[radial-gradient(circle_at_0_0,white_0,transparent_55%),radial-gradient(circle_at_100%_0,white_0,transparent_55%)]" />
       </div>
 
-      {/* NAVBAR – provider-like pill bar with profile */}
+      {/* NAVBAR */}
       <header className="relative z-30 border-b border-slate-900 bg-slate-950/80 backdrop-blur-2xl">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 py-3 flex items-center justify-between gap-3">
           {/* Brand pill */}
@@ -200,7 +246,7 @@ export default function CustomerDashboard() {
             </button>
           </nav>
 
-          {/* mobile compact nav – create + profile + logout in small pills */}
+          {/* mobile compact nav */}
           <div className="flex md:hidden items-center gap-2">
             <button
               type="button"
@@ -267,7 +313,7 @@ export default function CustomerDashboard() {
               {activeCount}
             </p>
             <p className="mt-1 text-[11px] text-slate-500 relative">
-              Pending or waiting for provider.
+              Pending or in progress with your provider.
             </p>
           </div>
           <div className="relative rounded-2xl bg-slate-950/80 border border-emerald-500/40 p-4 overflow-hidden">
