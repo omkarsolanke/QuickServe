@@ -44,6 +44,8 @@ app.add_middleware(
         "http://10.153.157.195:5173",
         "https://rising-twice-under-never.trycloudflare.com",
         "https://*.trycloudflare.com",
+        "https://quickserve-nu.vercel.app",
+        "https://quickserve-mdn2.onrender.com",
     ],
     allow_credentials=True,
     allow_methods=["*"],
