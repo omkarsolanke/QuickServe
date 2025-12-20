@@ -5,8 +5,13 @@ const host = window.location.hostname;
 
 let baseURL;
 
+// 🔹 Render production
+if (host === "quickserve-mdn2.onrender.com") {
+  baseURL = "https://quickserve-mdn2.onrender.com";
+}
+
 // 🔹 Cloudflare tunnel (mobile + public demo)
-if (host.endsWith(".trycloudflare.com")) {
+else if (host.endsWith(".trycloudflare.com")) {
   baseURL = "https://cluster-reviewer-relate-post.trycloudflare.com";
 }
 
@@ -27,9 +32,9 @@ else {
 
 const api = axios.create({
   baseURL,
-  // Do NOT force JSON here; set per-request / in interceptor
 });
 
+// 🔐 Auth + Content-Type handling
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("access_token");
   if (token) {
@@ -38,7 +43,6 @@ api.interceptors.request.use((config) => {
 
   // Only set JSON when body is NOT FormData
   if (config.data instanceof FormData) {
-    // Let browser set correct multipart/form-data boundary
     if (config.headers && config.headers["Content-Type"]) {
       delete config.headers["Content-Type"];
     }
