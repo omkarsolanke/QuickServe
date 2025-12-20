@@ -107,36 +107,53 @@ def update_customer_me(
 
 
 
+# ---------- NEARBY PROVIDERS ----------
+
+# Map smart-request chips to provider.service_type values
+SERVICE_MAP = {
+    "AC Repair": ["AC Repair"],
+    "Electrical issue": ["Electrician"],
+    "Plumbing leak": ["Plumber"],
+    "Cleaning": ["Cleaner"],
+    "Carpentry": ["Carpenter"],
+    "Painting": ["Painter"],
+    "Appliance repair": ["Appliance repair"],
+}
+
 @router.get("/nearby-providers")
 def nearby_providers(
-    service_type: str = Query(..., description="Service type, e.g. 'AC Repair'"),
+    service_type: str = Query(..., description="Service type from the smart request UI"),
     db: Session = Depends(get_db),
     user: dict = Depends(customer_required),
 ):
     """
-    Returns providers for the given service_type.
-    (You can extend this later with distance filtering using customer_lat/lng.)
+    Returns approved, online providers that match the chosen service type.
+    Uses SERVICE_MAP so all smart-request chips map to the correct provider.service_type.
     """
+
+    # fallback: if no mapping, use the raw service_type
+    allowed_types = SERVICE_MAP.get(service_type, [service_type])
+
     providers = (
         db.query(models.Provider, models.User)
         .join(models.User, models.User.id == models.Provider.user_id)
-        .filter(models.Provider.service_type == service_type)
+        .filter(models.Provider.service_type.in_(allowed_types))
         .filter(models.Provider.kyc_status == "approved")
+        .filter(models.Provider.is_online == True)
         .all()
     )
 
-    items = []
-    for p, u in providers:
-        items.append(
-            {
-                "provider_id": p.id,
-                "full_name": u.full_name,
-                "email": u.email,
-                "service_type": p.service_type,
-                "base_price": p.base_price,
-                "kyc_status": p.kyc_status,
-                "is_online": bool(p.is_online),
-            }
-        )
+    items = [
+        {
+            "provider_id": p.id,
+            "full_name": u.full_name,
+            "email": u.email,
+            "service_type": p.service_type,
+            "base_price": p.base_price,
+            "kyc_status": p.kyc_status,
+            "is_online": bool(p.is_online),
+        }
+        for p, u in providers
+    ]
 
     return {"items": items}
