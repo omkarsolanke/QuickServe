@@ -12,12 +12,24 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
+def _truncate_for_bcrypt(password: str) -> str:
+    """
+    bcrypt only uses the first 72 bytes; longer inputs raise ValueError.
+    Always truncate to 72 characters before hashing / verifying.
+    """
+    if password is None:
+        return ""
+    return password[:72]
+
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    safe = _truncate_for_bcrypt(plain_password)
+    return pwd_context.verify(safe, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    safe = _truncate_for_bcrypt(password)
+    return pwd_context.hash(safe)
 
 
 def create_access_token(
@@ -31,7 +43,7 @@ def create_access_token(
     )
 
     payload = {
-        "user_id": user_id,   # ✅ CONSISTENT
+        "user_id": user_id,
         "role": role,
         "exp": expire,
     }

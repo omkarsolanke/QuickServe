@@ -1,25 +1,24 @@
 from typing import Optional, Literal
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, field_validator, Field
 
 RoleType = Literal["customer", "provider", "admin"]
 
 
 class UserBase(BaseModel):
     full_name: str
-    email: EmailStr
+    email: str
     role: RoleType
 
 
 class UserCreate(UserBase):
-    password: str
+    password: str = Field(..., min_length=8, max_length=72)
     service_type: Optional[str] = None
     base_price: Optional[float] = None
 
     @field_validator("password")
     @classmethod
     def validate_password(cls, v: str):
-        if len(v) < 6:
-            raise ValueError("Password must be at least 6 characters")
+        # extra rules (if any) go here; length already enforced by Field
         return v
 
 
@@ -55,8 +54,10 @@ class PasswordChange(BaseModel):
     @field_validator("new_password")
     @classmethod
     def validate_new_password(cls, v: str):
-        if len(v) < 6:
-            raise ValueError("Password must be at least 6 characters")
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        if len(v) > 72:
+            raise ValueError("Password must be at most 72 characters")
         return v
 
 
@@ -80,7 +81,6 @@ class RequestOut(BaseModel):
 
     class Config:
         from_attributes = True
-
 
 
 class LocationUpdate(BaseModel):
