@@ -74,9 +74,8 @@ CLOUDINARY_API_KEY=xxxx
 CLOUDINARY_API_SECRET=xxxx
 
 JWT_SECRET=supersecretkey
-
-
-🏃 Run Locally
+```
+##🏃 Run Locally
 
 Backend
 
