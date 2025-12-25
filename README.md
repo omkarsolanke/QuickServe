@@ -186,10 +186,9 @@ This project is licensed under the **MIT License** - see [LICENSE](LICENSE) file
 
 **Omkar Solanke**
 
-- 🌐 Portfolio: [omkarsolanke.dev](https://omkarsolanke.dev)
 - 💼 LinkedIn: [@omkarsolanke](https://linkedin.com/in/omkarsolanke)
 - 🐙 GitHub: [@omkarsolanke](https://github.com/omkarsolanke)
-- 📧 Email: contact@omkarsolanke.dev
+
 
 ---
 
