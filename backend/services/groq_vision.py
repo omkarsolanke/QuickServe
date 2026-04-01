@@ -11,7 +11,7 @@ if not GROQ_API_KEY:
     raise RuntimeError("Missing GROQ_API_KEY environment variable")
 
 client = Groq(api_key=GROQ_API_KEY)
-VISION_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
+VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
 
 def analyze_service_image(image_url: str) -> Dict[str, Any]:
     if not image_url.startswith("https://"):
